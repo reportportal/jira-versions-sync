@@ -17,6 +17,7 @@ jira_server = JIRA(
         server=os.environ.get('JIRA_SERVER'),
         token_auth=os.environ.get('JIRA_TOKEN'),
         )
+jira_project_name = 'EPMRPP'
 
 def update_issue_task(issue_id, jira_fix_version):
     try:
@@ -32,7 +33,7 @@ def main():
     
     # Get new version for Jira fix version
     jira_fix_version = os.environ.get('JIRA_FIX_VERSION')
-    if jira_fix_version is None:
+    if not jira_fix_version:
         try:
             # Get version from branch name
             new_version_pattern = re.compile(r'/[0-9]+\.[0-9]?.+')
@@ -44,7 +45,7 @@ def main():
 
     # Get latest tag
     latest_tag = os.environ.get('LATEST_RELEASE_TAG')
-    if latest_tag is None:
+    if not latest_tag:
         try:
             # Get latest tag from git
             sorted_tags = sorted(repo.tags, key=lambda t: t.commit.committed_datetime)
@@ -68,12 +69,10 @@ def main():
     print("Jira fix version:", jira_fix_version)
     print("Latest tag:", latest_tag)
     print("Numbers of Jira issues:", len(jira_issues_ids))
-    
-    project_name = 'EPMRPP'
 
     # Check if version exists and create it if not
-    if jira_server.get_project_version_by_name(project_name, jira_fix_version) is None:
-        jira_server.create_version(name=jira_fix_version, project=project_name)
+    if jira_server.get_project_version_by_name(jira_project_name, jira_fix_version) is None:
+        jira_server.create_version(name=jira_fix_version, project=jira_project_name)
 
     # Update Fix Version field for all Jira issues
     start = time.time()

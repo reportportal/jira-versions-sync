@@ -17,7 +17,6 @@ jira_server = JIRA(
         server=os.environ.get('JIRA_SERVER'),
         token_auth=os.environ.get('JIRA_TOKEN'),
         )
-
 project_name = 'EPMRPP'
 
 # def update_issue_task(issue_id, jira_fix_version):
