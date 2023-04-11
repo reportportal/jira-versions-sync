@@ -34,7 +34,7 @@ def main():
     
     # Get new version for Jira fix version
     jira_fix_version = os.environ.get('JIRA_FIX_VERSION')
-    if jira_fix_version is None:
+    if not jira_fix_version:
         try:
             # Get version from branch name
             new_version_pattern = re.compile(r'/[0-9]+\.[0-9]?.+')
@@ -46,7 +46,7 @@ def main():
 
     # Get latest tag
     latest_tag = os.environ.get('LATEST_RELEASE_TAG')
-    if latest_tag is None:
+    if not latest_tag:
         try:
             # Get latest tag from git
             sorted_tags = sorted(repo.tags, key=lambda t: t.commit.committed_datetime)
