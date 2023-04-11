@@ -9,7 +9,7 @@ from jira import JIRA
 # You can use following environment variables:
 # JIRA_SERVER - Jira server URL (required)
 # JIRA_TOKEN - Jira token (required)
-# LATEST_RELEASE_TAG - latest release tag (optional). Takes the latest tag if not specified from git/origin.
+# LATEST_RELEASE_TAG - latest release tag (optional). Takes the latest tag if not specified from git.
 # JIRA_FIX_VERSION - Jira fix version (optional). Takes the version from active branch name (release/<version>) if not specified.
 
 repo = Repo()
@@ -30,10 +30,11 @@ def main():
     repo_name = repo.working_tree_dir.split("/")[-1]
     current_brunch = repo.active_branch
     
-    # Get new version from brunch name
+    # Get new version for Jira fix version
     jira_fix_version = os.environ.get('JIRA_FIX_VERSION')
     if jira_fix_version is None:
         try:
+            # Get version from branch name
             new_version_pattern = re.compile(r'/[0-9]+\.[0-9]?.+')
             new_version = new_version_pattern.search(
                 current_brunch.name).group().split('/')[1]
@@ -41,14 +42,17 @@ def main():
         except:
             print("Error: Can't get new version. Check brunch name according to the pattern: <branch_name>/<version>.")
 
+    # Get latest tag
     latest_tag = os.environ.get('LATEST_RELEASE_TAG')
     if latest_tag is None:
         try:
+            # Get latest tag from git
             sorted_tags = sorted(repo.tags, key=lambda t: t.commit.committed_datetime)
             latest_tag = sorted_tags[-1]
         except:
             print("Error: Can't get latest tag. Check if there are any tags in the repo.")
 
+    # Get Jira issues ids from git commits
     git_commits = repo.git.log(str(latest_tag) + '..HEAD', '--pretty=%s').split('\n')
 
     jira_id_pattern = re.compile(r'EPMRPP-[0-9]+')
@@ -58,6 +62,7 @@ def main():
         if jira_id_pattern.match(line)
         }
     
+    # Print info
     print("Repo name:", repo_name)
     print("Current brunch:", current_brunch)
     print("Jira fix version:", jira_fix_version)
