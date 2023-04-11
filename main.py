@@ -9,7 +9,8 @@ from jira import JIRA
 # You can use following environment variables:
 # JIRA_SERVER - Jira server URL (required)
 # JIRA_TOKEN - Jira token (required)
-# LATEST_RELEASE_TAG - latest release tag (optional). Takes the latest tag if not specified from active branch name
+# LATEST_RELEASE_TAG - latest release tag (optional). Takes the latest tag if not specified from git/origin.
+# JIRA_FIX_VERSION - Jira fix version (optional). Takes the version from active branch name (release/<version>) if not specified.
 
 repo = Repo()
 jira_server = JIRA(
@@ -29,14 +30,16 @@ def main():
     repo_name = repo.working_tree_dir.split("/")[-1]
     current_brunch = repo.active_branch
     
-    try:
-        new_version_pattern = re.compile(r'/[0-9]+\.[0-9]?.+')
-        new_version = new_version_pattern.search(
-            current_brunch.name).group().split('/')[1]
-    except:
-        print("Error: Can't get new version. Check brunch name according to the pattern: <branch_name>/<version>.")
-
-    jira_fix_version = repo_name + '-' + new_version
+    # Get new version from brunch name
+    jira_fix_version = os.environ.get('JIRA_FIX_VERSION')
+    if jira_fix_version is None:
+        try:
+            new_version_pattern = re.compile(r'/[0-9]+\.[0-9]?.+')
+            new_version = new_version_pattern.search(
+                current_brunch.name).group().split('/')[1]
+            jira_fix_version = repo_name + '-' + new_version
+        except:
+            print("Error: Can't get new version. Check brunch name according to the pattern: <branch_name>/<version>.")
 
     latest_tag = os.environ.get('LATEST_RELEASE_TAG')
     if latest_tag is None:
