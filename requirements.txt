@@ -1,0 +1,2 @@
+GitPython==3.1.31
+jira==3.5.0
