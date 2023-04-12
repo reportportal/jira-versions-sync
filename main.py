@@ -73,7 +73,7 @@ def main():
     print("Current brunch:", current_brunch)
     print("Jira fix version:", jira_fix_version)
     print("Latest tag:", latest_tag)
-    print("Numbers of Jira issues:", len(jira_issues_ids))
+    print("Numbers of Jira IDs:", len(jira_issues_ids))
 
     # Check if version exists and create it if not
     if jira_server.get_project_version_by_name(jira_project_name, jira_fix_version) is None:
@@ -89,6 +89,7 @@ def main():
 
     end = time.time()
     total_time = end - start
+    print("Number updated Jira issues:", len(results))
     print("Time execution:" + str(total_time))
     print("The following issues were updated:" + str([r.get() for r in results]))
     
