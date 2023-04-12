@@ -1,7 +1,8 @@
 import re
+import os
+import sys
 import time
 import multiprocessing
-import os
 
 from git import Repo
 from jira import JIRA
@@ -17,7 +18,7 @@ jira_server = JIRA(
         server=os.environ.get('JIRA_SERVER'),
         token_auth=os.environ.get('JIRA_TOKEN'),
         )
-jira_project_name = 'EPMRPP'
+jira_project_name = 'EPMRPP' # TODO: Get project name from env variable
 
 def update_issue_task(issue_id, jira_fix_version):
     try:
@@ -31,17 +32,21 @@ def main():
     repo_name = repo.working_tree_dir.split("/")[-1]
     current_brunch = repo.active_branch
     
-    # Get new version for Jira fix version
+    # Get new version
     jira_fix_version = os.environ.get('JIRA_FIX_VERSION')
     if not jira_fix_version:
-        try:
-            # Get version from branch name
+        try:          
+            # Get new version from git branch name
             new_version_pattern = re.compile(r'/[0-9]+\.[0-9]?.+')
             new_version = new_version_pattern.search(
                 current_brunch.name).group().split('/')[1]
             jira_fix_version = repo_name + '-' + new_version
         except:
-            print("Error: Can't get new version. Check brunch name according to the pattern: <branch_name>/<version>.")
+            sys.exit(
+                "Error: Can't get new version. Brunch {} doesn't " \
+                "match the pattern: " \
+                "<branch>/<version>.<version>".format(current_brunch.name)
+            )
 
     # Get latest tag
     latest_tag = os.environ.get('LATEST_RELEASE_TAG')
@@ -51,7 +56,7 @@ def main():
             sorted_tags = sorted(repo.tags, key=lambda t: t.commit.committed_datetime)
             latest_tag = sorted_tags[-1]
         except:
-            print("Error: Can't get latest tag. Check if there are any tags in the repo.")
+            sys.exit("Error: Can't get latest tag. Check if there are any tags in the repo.")
 
     # Get Jira issues ids from git commits
     git_commits = repo.git.log(str(latest_tag) + '..HEAD', '--pretty=%s').split('\n')
@@ -61,7 +66,7 @@ def main():
         jira_id_pattern.search(line).group()
         for line in git_commits
         if jira_id_pattern.match(line)
-        }
+    }
     
     # Print info
     print("Repo name:", repo_name)
