@@ -49,17 +49,36 @@ def main():
             )
 
     # Get latest tag
-    latest_tag = os.environ.get('LATEST_RELEASE_TAG')
-    if not latest_tag:
+    latest_release_tag = os.environ.get('LATEST_RELEASE_TAG')
+    if not latest_release_tag:
         try:
-            # Get latest tag from git
-            sorted_tags = sorted(repo.tags, key=lambda t: t.commit.committed_datetime)
-            latest_tag = sorted_tags[-1]
+            # Get sorted tags by commit date
+            sorted_tags = [
+                tag.name for tag in sorted(
+                    repo.tags, key=lambda t: t.commit.committed_datetime
+                )
+            ]
+            # Set pattern for release tags
+            release_tag_pattern = re.compile(
+                    r'(\d+\.\d+\.\d+(?!-))|(v\d+\.\d+\.\d+(?!-))'
+                )
+            # Filter release tags
+            release_tags = [
+                    tag for tag in sorted_tags 
+                    if release_tag_pattern.match(tag)
+                ]
+            # Get latest release tag from filtered tags
+            latest_release_tag = release_tags[-1]
         except:
-            sys.exit("Error: Can't get latest tag. Check if there are any tags in the repo.")
+            sys.exit(
+                "Error: Can't get latest release tag. " \
+                "Check if there are any release tags in the repo."
+            )
 
     # Get Jira issues ids from git commits
-    git_commits = repo.git.log(str(latest_tag) + '..HEAD', '--pretty=%s').split('\n')
+    git_commits = repo.git.log(
+            str(latest_release_tag) + '..HEAD', '--pretty=%s'
+        ).split('\n')
 
     jira_id_pattern = re.compile(r'EPMRPP-[0-9]+')
     jira_issues_ids = {
@@ -72,7 +91,7 @@ def main():
     print("Repo name:", repo_name)
     print("Current brunch:", current_brunch)
     print("Jira fix version:", jira_fix_version)
-    print("Latest tag:", latest_tag)
+    print("Latest tag:", latest_release_tag)
     print("Numbers of Jira IDs:", len(jira_issues_ids))
 
     # Check if version exists and create it if not
@@ -83,7 +102,12 @@ def main():
     start = time.time()
 
     with multiprocessing.Pool() as p:
-        results = [p.apply_async(update_issue_task, args=(jira_issue, jira_fix_version)) for jira_issue in jira_issues_ids]
+        results = [
+            p.apply_async(
+                update_issue_task, args=(jira_issue, jira_fix_version)
+            ) for jira_issue in jira_issues_ids
+        ]
+        
         for r in results:
             r.wait()
 

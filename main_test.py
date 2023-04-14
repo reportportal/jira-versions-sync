@@ -1,8 +1,11 @@
 import re
 import os
 import sys
+import time
+import multiprocessing
 
 from git import Repo
+from jira import JIRA
 
 # You can use following environment variables:
 # JIRA_SERVER - Jira server URL (required)
@@ -20,6 +23,7 @@ def main():
     jira_fix_version = os.environ.get('JIRA_FIX_VERSION')
     if not jira_fix_version:
         try:          
+            # Get new version from git branch name
             new_version_pattern = re.compile(r'/[0-9]+\.[0-9]?.+')
             new_version = new_version_pattern.search(
                 current_brunch.name).group().split('/')[1]
@@ -32,16 +36,36 @@ def main():
             )
 
     # Get latest tag
-    latest_tag = os.environ.get('LATEST_RELEASE_TAG')
-    if not latest_tag:
+    latest_release_tag = os.environ.get('LATEST_RELEASE_TAG')
+    if not latest_release_tag:
         try:
-            sorted_tags = sorted(repo.tags, key=lambda t: t.commit.committed_datetime)
-            latest_tag = sorted_tags[-1]
+            # Get sorted tags by commit date
+            sorted_tags = [
+                tag.name for tag in sorted(
+                    repo.tags, key=lambda t: t.commit.committed_datetime
+                )
+            ]
+            # Set pattern for release tags
+            release_tag_pattern = re.compile(
+                    r'(\d+\.\d+\.\d+(?!-))|(v\d+\.\d+\.\d+(?!-))'
+                )
+            # Filter release tags
+            release_tags = [
+                    tag for tag in sorted_tags 
+                    if release_tag_pattern.match(tag)
+                ]
+            # Get latest release tag from filtered tags
+            latest_release_tag = release_tags[-1]
         except:
-            sys.exit("Error: Can't get latest tag. Check if there are any tags in the repo.")
+            sys.exit(
+                "Error: Can't get latest release tag. " \
+                "Check if there are any release tags in the repo."
+            )
 
     # Get Jira issues ids from git commits
-    git_commits = repo.git.log(str(latest_tag) + '..HEAD', '--pretty=%s').split('\n')
+    git_commits = repo.git.log(
+            str(latest_release_tag) + '..HEAD', '--pretty=%s'
+        ).split('\n')
 
     jira_id_pattern = re.compile(r'EPMRPP-[0-9]+')
     jira_issues_ids = {
@@ -54,9 +78,9 @@ def main():
     print("Repo name:", repo_name)
     print("Current brunch:", current_brunch)
     print("Jira fix version:", jira_fix_version)
-    print("Latest tag:", latest_tag)
-    print("Numbers of Jira issues:", len(jira_issues_ids))
-    print("Jira issues ids:", jira_issues_ids)
+    print("Latest tag:", latest_release_tag)
+    print("Numbers of Jira IDs:", len(jira_issues_ids))
+    print("Jira IDs:", jira_issues_ids)
     
 if __name__ == "__main__":
     main()
