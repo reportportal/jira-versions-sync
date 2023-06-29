@@ -80,7 +80,7 @@ def main():
             str(latest_release_tag) + '..HEAD', '--pretty=%s'
         ).split('\n')
 
-    jira_id_pattern = re.compile(r'EPMRPP-[0-9]+')
+    jira_id_pattern = re.compile(r'(?i)epmrpp-[0-9]+')
     jira_issues_ids = {
         jira_id_pattern.search(line).group()
         for line in git_commits
