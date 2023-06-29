@@ -22,8 +22,15 @@ jira_project_name = 'EPMRPP' # TODO: Get project name from env variable
 
 def update_issue_task(issue_id, jira_fix_version):
     try:
-        issue = jira_server.issue(issue_id, fields='None')
-        issue.update(fields={'fixVersions': [{'name': jira_fix_version}]}, notify=False)
+        issue = jira_server.issue(issue_id, fields='fixVersions')         
+        current_fix_versions = [fix_version.name for fix_version in issue.fields.fixVersions]
+        
+        if jira_fix_version not in current_fix_versions:
+            current_fix_versions.append(jira_fix_version)
+        
+        updated_fix_versions = [{'name': fix_version} for fix_version in current_fix_versions]
+        issue.update(fields={'fixVersions': updated_fix_versions}, notify=False)
+        
         return issue_id
     except:
         print("Error: Can't update issue: " + issue_id)
