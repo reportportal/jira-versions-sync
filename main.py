@@ -18,11 +18,16 @@ jira_server = JIRA(
         server=os.environ.get('JIRA_SERVER'),
         token_auth=os.environ.get('JIRA_TOKEN'),
         )
-jira_project_name = 'EPMRPP' # TODO: Get project name from env variable
+
+# TODO: Get project name from env variable
+jira_project_name = 'EPMRPP'
 
 def update_issue_task(issue_id, jira_fix_version):
     try:
-        issue = jira_server.issue(issue_id, fields='fixVersions')         
+        issue = jira_server.issue(issue_id, fields='fixVersions')
+        if issue is None or issue.fields.fixVersions is None:
+            raise ValueError(f"Issue or fixVersions is None for issue ID: {issue_id}")
+
         current_fix_versions = [fix_version.name for fix_version in issue.fields.fixVersions]
         
         if jira_fix_version not in current_fix_versions:
@@ -32,8 +37,8 @@ def update_issue_task(issue_id, jira_fix_version):
         issue.update(fields={'fixVersions': updated_fix_versions}, notify=False)
         
         return issue_id
-    except:
-        print("Error: Can't update issue: " + issue_id)
+    except Exception as e:
+        print(f"Error: Can't update issue {issue_id}: {e}")
 
 def main():
     repo_name = repo.working_tree_dir.split("/")[-1]
@@ -48,12 +53,9 @@ def main():
             new_version = new_version_pattern.search(
                 current_brunch.name).group().split('/')[1]
             jira_fix_version = repo_name + '-' + new_version
-        except:
-            sys.exit(
-                "Error: Can't get new version. Brunch {} doesn't " \
-                "match the pattern: " \
-                "<branch>/<version>.<version>".format(current_brunch.name)
-            )
+        except Exception as e:
+            print(f"Error: Unable to determine JIRA fix version: {e}")
+            sys.exit(1)
 
     # Get latest tag
     latest_release_tag = os.environ.get('LATEST_RELEASE_TAG')
@@ -76,11 +78,9 @@ def main():
                 ]
             # Get latest release tag from filtered tags
             latest_release_tag = release_tags[-1]
-        except:
-            sys.exit(
-                "Error: Can't get latest release tag. " \
-                "Check if there are any release tags in the repo."
-            )
+        except Exception as e:
+            print(f"Error: Unable to determine latest release tag: {e}")
+            sys.exit(1)
 
     # Get Jira issues ids from git commits
     git_commits = repo.git.log(
