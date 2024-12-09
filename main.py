@@ -102,8 +102,12 @@ def main():
     print("Numbers of Jira IDs:", len(jira_issues_ids))
 
     # Check if version exists and create it if not
-    if jira_server.get_project_version_by_name(jira_project_name, jira_fix_version) is None:
-        jira_server.create_version(name=jira_fix_version, project=jira_project_name)
+    try:
+        if jira_server.get_project_version_by_name(jira_project_name, jira_fix_version) is None:
+            jira_server.create_version(name=jira_fix_version, project=jira_project_name)
+    except Exception as e:
+        print(f"Error: Unable to check or create JIRA fix version: {e}")
+        sys.exit(1)
 
     # Update Fix Version field for all Jira issues
     start = time.time()
