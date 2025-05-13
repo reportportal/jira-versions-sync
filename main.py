@@ -40,7 +40,60 @@ def update_issue_task(issue_id, jira_fix_version):
     except Exception as e:
         print(f"Error: Can't update issue {issue_id}: {e}")
 
+
+def check_jira_connection(jira_server):
+    """Verify connection to JIRA server and print diagnostic information"""
+    print("Checking JIRA connection...")
+    try:
+        # Get server info - this is a good basic connectivity test
+        server_info = jira_server.server_info()
+        print(f"✅ Connected to JIRA server: {server_info.get('baseUrl', 'unknown')}")
+        print(f"✅ JIRA version: {server_info.get('version', 'unknown')}")
+        
+        # Try to get current user - tests authentication
+        myself = jira_server.myself()
+        print(f"✅ Authenticated as: {myself.get('displayName', 'unknown')} ({myself.get('emailAddress', 'unknown')})")
+        
+        # Check project access
+        project = jira_server.project(jira_project_name)
+        print(f"✅ Access to project '{jira_project_name}' confirmed: {project.name}")
+        
+        # Check REST API directly
+        session = jira_server._session
+        api_url = f"{jira_server.server_url}/rest/api/2/serverInfo"
+        response = session.get(api_url)
+        
+        if response.status_code == 200:
+            print(f"✅ REST API accessible (status code: {response.status_code})")
+        else:
+            print(f"⚠️ REST API returned unexpected status code: {response.status_code}")
+            print(f"Response content: {response.text[:500]}")
+        
+        return True
+    except Exception as e:
+        print(f"❌ JIRA connection failed: {type(e).__name__} - {str(e)}")
+        
+        # Try to get more diagnostics
+        try:
+            session = jira_server._session
+            test_url = jira_server.server_url
+            print(f"Attempting direct HTTP GET to {test_url}...")
+            
+            response = session.get(test_url, allow_redirects=False)
+            print(f"Status code: {response.status_code}")
+            print(f"Headers: {dict(response.headers)}")
+            print(f"Response content preview: {response.text[:500]}")
+            
+        except Exception as nested_e:
+            print(f"Direct connection test also failed: {type(nested_e).__name__} - {str(nested_e)}")
+        
+        return False
+
 def main():
+    if not check_jira_connection(jira_server):
+        print("JIRA connection test failed. Exiting.")
+        sys.exit(1)
+    
     repo_name = repo.working_tree_dir.split("/")[-1]
     current_brunch = repo.active_branch
     
