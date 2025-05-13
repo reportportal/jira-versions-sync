@@ -102,46 +102,10 @@ def main():
     print("Numbers of Jira IDs:", len(jira_issues_ids))
 
     # Check if version exists and create it if not
-    # try:
-    #     print(f"Checking if version '{jira_fix_version}' exists in project '{jira_project_name}'...")
-    #     existing_version = jira_server.get_project_version_by_name(jira_project_name, jira_fix_version)
-    #     print(f"Version check result: {existing_version}")
-    # except Exception as e:
-    #     print(f"Error during version check: {type(e).__name__} {e}")
-    #     sys.exit(1)
-
     try:
         print(f"Checking if version '{jira_fix_version}' exists in project '{jira_project_name}'...")
-        
-        # Debug: Print raw request details
-        import requests
-        from jira.resilientsession import ResilientSession
-        
-        # Get original session from JIRA
-        original_session = jira_server._session
-        
-        # Save original request method
-        original_request = original_session.request
-        
-        # Create wrapper for request method
-        def request_wrapper(*args, **kwargs):
-            print(f"DEBUG: Request to URL: {args[1]}")
-            response = original_request(*args, **kwargs)
-            print(f"DEBUG: Response status code: {response.status_code}")
-            print(f"DEBUG: Response headers: {response.headers}")
-            print(f"DEBUG: Raw response content: {response.text[:500]}")  # Print first 500 chars
-            return response
-        
-        # Replace request method with wrapper
-        original_session.request = request_wrapper
-        
-        try:
-            existing_version = jira_server.get_project_version_by_name(jira_project_name, jira_fix_version)
-            print(f"Version check result: {existing_version}")
-        finally:
-            # Restore original request method
-            original_session.request = original_request
-            
+        existing_version = jira_server.get_project_version_by_name(jira_project_name, jira_fix_version)
+        print(f"Version check result: {existing_version}")
     except Exception as e:
         print(f"Error during version check: {type(e).__name__} {e}")
         sys.exit(1)
