@@ -43,21 +43,34 @@ def update_issue_task(issue_id, jira_fix_version):
 
 def check_jira_connection(jira_server):
     print("Checking JIRA connection...")
+    
+    # Get server info - this is a good basic connectivity test
     try:
-        # Get server info - this is a good basic connectivity test
         server_info = jira_server.server_info()
         print(f"✅ Connected to JIRA server: {server_info.get('baseUrl', 'unknown')}")
         print(f"✅ JIRA version: {server_info.get('version', 'unknown')}")
-        
-        # Try to get current user - tests authentication
+    except Exception as e:
+        print(f"⚠️ Error connecting to JIRA server: {type(e).__name__} {e}")
+        return False
+
+    # Get current user - tests authentication
+    try:
         myself = jira_server.myself()
         print(f"✅ Authenticated as: {myself.get('displayName', 'unknown')} ({myself.get('emailAddress', 'unknown')})")
-        
-        # Check project access
+    except Exception as e:
+        print(f"⚠️ Error getting current user: {type(e).__name__} {e}")
+        return False
+    
+    # Check project access
+    try:
         project = jira_server.project(jira_project_name)
         print(f"✅ Access to project '{jira_project_name}' confirmed: {project.name}")
-        
-        # Check REST API directly
+    except Exception as e:
+        print(f"⚠️ Error accessing project '{jira_project_name}': {type(e).__name__} {e}")
+        return False
+    
+    # Check REST API directly
+    try:
         session = jira_server._session
         api_url = f"{jira_server.server_url}/rest/api/2/serverInfo"
         response = session.get(api_url)
@@ -67,25 +80,10 @@ def check_jira_connection(jira_server):
         else:
             print(f"⚠️ REST API returned unexpected status code: {response.status_code}")
             print(f"Response content: {response.text[:500]}")
-        
+            return False
         return True
     except Exception as e:
-        print(f"❌ JIRA connection failed: {type(e).__name__} - {str(e)}")
-        
-        # Try to get more diagnostics
-        try:
-            session = jira_server._session
-            test_url = jira_server.server_url
-            print(f"Attempting direct HTTP GET to {test_url}...")
-            
-            response = session.get(test_url, allow_redirects=False)
-            print(f"Status code: {response.status_code}")
-            print(f"Headers: {dict(response.headers)}")
-            print(f"Response content preview: {response.text[:500]}")
-            
-        except Exception as nested_e:
-            print(f"Direct connection test also failed: {type(nested_e).__name__} - {str(nested_e)}")
-        
+        print(f"⚠️ Error accessing REST API: {type(e).__name__} {e}")
         return False
 
 def main():
