@@ -107,8 +107,7 @@ def main():
         existing_version = jira_server.get_project_version_by_name(jira_project_name, jira_fix_version)
         print(f"Version check result: {existing_version}")
     except Exception as e:
-        print(f"Error during version check: {e}")
-        print(f"Error type: {type(e).__name__}")
+        print(f"Error during version check: {type(e).__name__} {e}")
         sys.exit(1)
 
     # Create version if it doesn't exist
@@ -119,8 +118,7 @@ def main():
             new_version = jira_server.create_version(name=jira_fix_version, project=jira_project_name)
             print(f"Version created successfully: {new_version}")
         except Exception as e:
-            print(f"Error: Unable to create JIRA fix version: {e}")
-            print(f"Error type: {type(e).__name__}")
+            print(f"Error: Unable to create JIRA fix version: {type(e).__name__} {e}")
             sys.exit(1)
 
     start = time.time()
