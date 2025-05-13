@@ -42,7 +42,6 @@ def update_issue_task(issue_id, jira_fix_version):
 
 
 def check_jira_connection(jira_server):
-    """Verify connection to JIRA server and print diagnostic information"""
     print("Checking JIRA connection...")
     try:
         # Get server info - this is a good basic connectivity test
