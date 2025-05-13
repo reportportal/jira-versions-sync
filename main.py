@@ -103,6 +103,7 @@ def main():
 
     # Check if version exists and create it if not
     try:
+        print(f"Checking if version '{jira_fix_version}' exists in project '{jira_project_name}'...")
         existing_version = jira_server.get_project_version_by_name(jira_project_name, jira_fix_version)
         print(f"Version check result: {existing_version}")
     except Exception as e:
@@ -114,20 +115,14 @@ def main():
     if existing_version is None:
         print(f"Version '{jira_fix_version}' not found. Attempting to create...")
         try:
+            print(f"Creating version with parameters: name='{jira_fix_version}', project='{jira_project_name}'")
             new_version = jira_server.create_version(name=jira_fix_version, project=jira_project_name)
             print(f"Version created successfully: {new_version}")
         except Exception as e:
             print(f"Error: Unable to create JIRA fix version: {e}")
             print(f"Error type: {type(e).__name__}")
             sys.exit(1)
-    # try:
-    #     if jira_server.get_project_version_by_name(jira_project_name, jira_fix_version) is None:
-    #         jira_server.create_version(name=jira_fix_version, project=jira_project_name)
-    # except Exception as e:
-    #     print(f"Error: Unable to check or create JIRA fix version: {e}")
-    #     sys.exit(1)
 
-    # Update Fix Version field for all Jira issues
     start = time.time()
 
     with multiprocessing.Pool() as p:
